@@ -7,21 +7,11 @@ import {
 import { JsonObject } from '@angular-devkit/core';
 import { TestcafeBuilderOptions } from './schema';
 import { isMatch } from 'lodash';
-const createTestCafe = require('testcafe');
+import createTestCafe from 'testcafe';
 
-async function runTestcafe (opts: TestcafeBuilderOptions, hostName): Promise<unknown> {
-    const port1 = opts.ports && opts.ports[0];
-    const port2 = opts.ports && opts.ports[1];
+async function runTests (testCafe, opts: TestcafeBuilderOptions): Promise<unknown> {
     const proxy = opts.proxy;
     const proxyBypass = opts.proxyBypass;
-
-    const testCafe = await createTestCafe(
-        hostName,
-        port1,
-        port2,
-        opts.ssl,
-        opts.dev
-    );
 
     const runner = opts.live
         ? testCafe.createLiveModeRunner()
@@ -78,6 +68,7 @@ async function execute (
 ): Promise<BuilderOutput> {
     let server;
     let serverOptions;
+    let testCafe;
 
     if (options.devServerTarget) {
         const target = targetFromTargetString(options.devServerTarget);
@@ -94,8 +85,19 @@ async function execute (
     }
 
     try {
-        const host = serverOptions ? serverOptions.host : options.host;
-        const failedCount = await runTestcafe(options, host);
+        const host  = serverOptions ? serverOptions.host : options.host;
+        const port1 = options.ports && options.ports[0];
+        const port2 = options.ports && options.ports[1];
+
+        const testCafe = await createTestCafe(
+            host,
+            port1,
+            port2,
+            options.ssl,
+            options.dev
+        );
+
+        const failedCount = await runTests(testCafe, options);
 
         if (failedCount > 0)
             return { success: false };
@@ -112,6 +114,9 @@ async function execute (
     finally {
         if (server)
             await server.stop();
+
+        if (testCafe)
+            await testCafe.close();
 
     }
 }

@@ -7,7 +7,7 @@ import {
 import { JsonObject } from '@angular-devkit/core';
 import { TestcafeBuilderOptions } from './schema';
 import { isMatch } from 'lodash';
-import createTestCafe from 'testcafe';
+const createTestCafe = require('testcafe');
 
 async function runTests (testCafe, opts: TestcafeBuilderOptions): Promise<unknown> {
     const proxy = opts.proxy;
@@ -89,7 +89,7 @@ async function execute (
         const port1 = options.ports && options.ports[0];
         const port2 = options.ports && options.ports[1];
 
-        const testCafe = await createTestCafe(
+        testCafe = await createTestCafe(
             host,
             port1,
             port2,
@@ -117,7 +117,6 @@ async function execute (
 
         if (testCafe)
             await testCafe.close();
-
     }
 }
 
